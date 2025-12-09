@@ -170,12 +170,12 @@ export default function WalletSetupPage() {
                 <p className="text-gray-300 text-xs">Tus claves privadas nunca dejan tu navegador</p>
               </div>
               <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                <div className="text-3xl mb-2">âš¡</div>
-                <h3 className="text-white font-bold text-sm mb-1">RÃ¡pido</h3>
-                <p className="text-gray-300 text-xs">Transacciones instantÃ¡neas en Stellar</p>
+                <div className="text-3xl mb-2">⚡</div>
+                <h3 className="text-white font-bold text-sm mb-1">Rápido</h3>
+                <p className="text-gray-300 text-xs">Transacciones instantáneas en Stellar</p>
               </div>
               <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
-                <div className="text-3xl mb-2">ðŸŒ</div>
+                <div className="text-3xl mb-2">🌍</div>
                 <h3 className="text-white font-bold text-sm mb-1">Descentralizado</h3>
                 <p className="text-gray-300 text-xs">Control total de tus activos</p>
               </div>

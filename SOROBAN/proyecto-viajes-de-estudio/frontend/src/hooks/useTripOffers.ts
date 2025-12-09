@@ -46,17 +46,17 @@ export const useTripOffers = () => {
       const data = await response.json();
       
       if (!data.success) {
-        console.error('❌ [HOOK] API error:', data.message);
+        console.error('[HOOK] API error:', data.message);
         return;
       }
       
       const activeTrips = data.trips.filter((t: TripOffer) => t.status === 'active');
-      console.log(`✅ [HOOK] Total de viajes cargados: ${data.trips.length}`);
-      console.log(`🎯 [HOOK] Viajes activos: ${activeTrips.length}`);
+      console.log(`[HOOK] Total de viajes cargados: ${data.trips.length}`);
+      console.log(`[HOOK] Viajes activos: ${activeTrips.length}`);
       
       setTrips(activeTrips);
     } catch (error) {
-      console.error('❌ [HOOK] Error cargando viajes:', error);
+      console.error('[HOOK] Error cargando viajes:', error);
     } finally {
       setLoading(false);
     }
@@ -77,7 +77,7 @@ export const useTripOffers = () => {
       }
       return [];
     } catch (error) {
-      console.error('❌ [HOOK] Error cargando reservas:', error);
+      console.error('[HOOK] Error cargando reservas:', error);
       return [];
     }
   }, []);

@@ -29,7 +29,7 @@ export default function AvailableTripsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Verificar si está autenticado
+  // Verificar si está autenticado y cargar viajes
   useEffect(() => {
     const user = getCurrentUser();
     if (!user) {
@@ -38,15 +38,17 @@ export default function AvailableTripsPage() {
       return;
     }
     // Permitir tanto clientes como empresas ver viajes
-    console.log(`✅ [AVAILABLE-TRIPS] Usuario autenticado: ${user.userType} (${user.name || user.companyName})`);
+    console.log(`[AVAILABLE-TRIPS] Usuario autenticado: ${user.userType} (${user.name || user.companyName})`);
     setCurrentUser(user);
     if (account?.publicKey) {
       loadClientReservations(account.publicKey).then(res => setReservations(res));
     }
+    // Cargar viajes disponibles
+    loadAllTrips();
     setIsInitialized(true);
-  }, [router, account?.publicKey]);
+  }, [router, account?.publicKey, loadAllTrips]);
 
-  // FunciÃ³n para refrescar viajes manualmente
+  // Función para refrescar viajes manualmente
   const handleRefreshTrips = async () => {
     setRefreshing(true);
     console.log('[PAGE] Refrescando lista de viajes...');
@@ -58,6 +60,8 @@ export default function AvailableTripsPage() {
     setFilterDestination('');
     setFilterMaxPrice(1000);
     console.log('[PAGE] Filtros limpiados - mostrando todas las ofertas');
+    // Forzar scroll hacia arriba
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const filteredTrips = trips.filter(trip => {
@@ -331,7 +335,7 @@ export default function AvailableTripsPage() {
                     {/* Highlights */}
                     <div className="mb-4 space-y-1">
                       {trip.highlights.slice(0, 2).map((h, idx) => (
-                        <p key={idx} className="text-gray-400 text-xs">âœ“ {h}</p>
+                        <p key={idx} className="text-gray-400 text-xs">✓ {h}</p>
                       ))}
                       {trip.highlights.length > 2 && (
                         <p className="text-gray-400 text-xs">+{trip.highlights.length - 2} más</p>
@@ -460,7 +464,7 @@ export default function AvailableTripsPage() {
                   <h3 className="text-lg font-bold text-white mb-3">{selectedTrip.name}</h3>
                   <div className="space-y-2 text-sm text-gray-300">
                     <p><span className="text-gray-400">Destino:</span> {selectedTrip.destination}</p>
-                    <p><span className="text-gray-400">DuraciÃ³n:</span> {selectedTrip.duration}</p>
+                    <p><span className="text-gray-400">Duración:</span> {selectedTrip.duration}</p>
                     <p><span className="text-gray-400">Empresa:</span> {selectedTrip.companyName}</p>
                   </div>
                 </div>
@@ -472,7 +476,7 @@ export default function AvailableTripsPage() {
                     <span className="text-2xl font-bold text-stellar">{selectedTrip.priceXLM} XLM</span>
                   </div>
                   <p className="text-xs text-gray-500">
-                    Se enviarÃ¡ desde tu wallet a la empresa
+                    Se enviará desde tu wallet a la empresa
                   </p>
                 </div>
 
@@ -520,7 +524,7 @@ export default function AvailableTripsPage() {
                   <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Check className="w-8 h-8 text-green-400" />
                   </div>
-                  <h2 className="text-2xl font-bold text-white mb-2">Â¡Reserva Confirmada!</h2>
+                  <h2 className="text-2xl font-bold text-white mb-2">¡Reserva Confirmada!</h2>
                   <p className="text-gray-400 mb-6">Tu reserva ha sido procesada exitosamente</p>
 
                   <div className="bg-slate-800/50 rounded-lg p-4 mb-6 border border-slate-700 text-left">
@@ -540,9 +544,9 @@ export default function AvailableTripsPage() {
               <>
                 <div className="text-center">
                   <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl">âœ•</span>
+                    <span className="text-2xl">✕</span>
                   </div>
-                  <h2 className="text-2xl font-bold text-white mb-2">Error en la TransacciÃ³n</h2>
+                  <h2 className="text-2xl font-bold text-white mb-2">Error en la Transacción</h2>
                   <p className="text-gray-400 mb-6">No se pudo procesar el pago. Intenta nuevamente.</p>
 
                   <button
