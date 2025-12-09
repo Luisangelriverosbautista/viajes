@@ -22,26 +22,25 @@ export default function DashboardPage() {
   const [showReservationModal, setShowReservationModal] = useState(false);
 
   useEffect(() => {
-    setIsInitialized(true);
-    // Verificar si hay sesión activa
     const walletAddress = localStorage.getItem('walletAddress');
     const isAuthenticated = localStorage.getItem('isAuthenticated');
+    const currentUser = getCurrentUser();
     
     if (!walletAddress || !isAuthenticated) {
+      console.log('[DASHBOARD] No hay sesión, redirigiendo a login');
       router.push('/login');
       return;
     }
 
-    // Verificar tipo de usuario y redirigir si es empresa
-    const currentUser = getCurrentUser();
     if (currentUser && currentUser.userType === 'company') {
+      console.log('[DASHBOARD] Usuario es empresa, redirigiendo a company-dashboard');
       router.push('/company-dashboard');
       return;
     }
 
-    // Cargar viajes desde Stellar
-    loadAllTrips();
-  }, [router, getCurrentUser]);
+    console.log('[DASHBOARD] Usuario es alumno, redirigiendo a available-trips');
+    router.push('/available-trips');
+  }, [router, getCurrentUser, account]);
 
   if (!isInitialized || !account) {
     return (

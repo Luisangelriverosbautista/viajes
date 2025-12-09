@@ -33,20 +33,24 @@ export default function AvailableTripsPage() {
 
   // Verificar si está autenticado y cargar viajes
   useEffect(() => {
+    const walletAddress = localStorage.getItem('walletAddress');
+    const isAuthenticated = localStorage.getItem('isAuthenticated');
     const user = getCurrentUser();
-    if (!user) {
-      // No hay usuario, redirigir al login
+    
+    if (!walletAddress || !isAuthenticated || !user) {
+      console.log('[AVAILABLE-TRIPS] Sin sesión, ir a login');
       router.push('/login');
       return;
     }
-    // Permitir tanto clientes como empresas ver viajes
-    console.log(`[AVAILABLE-TRIPS] Usuario autenticado: ${user.userType} (${user.name || user.companyName})`);
+    
+    console.log(`[AVAILABLE-TRIPS] Usuario: ${user.userType} (${user.name || user.companyName})`);
     setCurrentUser(user);
     
-    // Siempre cargar viajes al inicializar
+    // Cargar viajes
     const loadInitialData = async () => {
       try {
         await loadAllTrips();
+        console.log('[AVAILABLE-TRIPS] Viajes cargados');
       } catch (error) {
         console.error('[AVAILABLE-TRIPS] Error cargando viajes:', error);
       }
@@ -58,7 +62,15 @@ export default function AvailableTripsPage() {
       loadClientReservations(account.publicKey).then(res => setReservations(res)).catch(e => console.error('Error cargando reservaciones:', e));
     }
     
+    // Sincronizar cada 5 segundos (refleja pagos y viajes nuevos)
+    const syncInterval = setInterval(() => {
+      console.log('[AVAILABLE-TRIPS] Sincronizando viajes nuevos y pagos...');
+      loadAllTrips().catch(e => console.error('Error sync:', e));
+    }, 5000);
+    
     setIsInitialized(true);
+    
+    return () => clearInterval(syncInterval);
   }, [router, account?.publicKey]);
 
   // Función para refrescar viajes manualmente
@@ -84,9 +96,14 @@ export default function AvailableTripsPage() {
   });
 
   const handleLogout = () => {
+    console.log('[AVAILABLE-TRIPS] Cerrando sesión...');
     disconnectWallet();
     localStorage.removeItem('current_user');
     localStorage.removeItem('user_wallet');
+    localStorage.removeItem('user_type');
+    localStorage.removeItem('walletAddress');
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('loginTime');
     router.push('/login');
   };
 

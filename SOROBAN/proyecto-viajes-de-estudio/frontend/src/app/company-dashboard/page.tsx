@@ -50,16 +50,29 @@ export default function CompanyDashboardPage() {
 
   // Verificar si es empresa
   useEffect(() => {
+    const walletAddress = localStorage.getItem('walletAddress');
+    const isAuthenticated = localStorage.getItem('isAuthenticated');
     const user = getCurrentUser();
-    if (!user || user.userType !== 'company') {
-      console.log('[DASHBOARD] No es empresa o no hay usuario');
+    
+    if (!walletAddress || !isAuthenticated || !user || user.userType !== 'company') {
+      console.log('[COMPANY-DASHBOARD] No autorizado, ir a login');
       router.push('/login');
       return;
     }
-    console.log('[DASHBOARD] Empresa encontrada:', user.companyName, 'Wallet:', user.publicKey);
+    
+    console.log('[COMPANY-DASHBOARD] Empresa:', user.companyName);
     setCurrentUser(user);
     loadTripOffersFromAPI(user.publicKey);
+    
+    // Sincronizar cada 5 segundos
+    const syncInterval = setInterval(() => {
+      console.log('[COMPANY-DASHBOARD] Sincronizando viajes...');
+      loadTripOffersFromAPI(user.publicKey);
+    }, 5000);
+    
     setIsInitialized(true);
+    
+    return () => clearInterval(syncInterval);
   }, [router, getCurrentUser]);
 
   const loadTripOffers = (walletKey?: string) => {
