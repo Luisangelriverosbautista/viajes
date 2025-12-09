@@ -37,20 +37,20 @@ export default function RegisterNewPage() {
     school: '',
   });
 
-  // Si ya está conectado y registrado, ir al dashboard
+  // Si ya está conectado y registrado, ir al dashboard correcto
   useEffect(() => {
     if (account) {
       const currentUser = getCurrentUser();
       if (currentUser) {
-        // Ya está registrado
+        // Ya está registrado, redirigir al dashboard correcto
         if (currentUser.userType === 'company') {
           router.push('/company-dashboard');
         } else {
-          router.push('/dashboard');
+          router.push('/available-trips');
         }
       }
     }
-  }, [account, getCurrentUser, router]);
+  }, [account, router]);
 
   // ============ PASO 1: DATOS DEL USUARIO ============
   const handleUserDataSubmit = async (e: React.FormEvent) => {
@@ -118,11 +118,14 @@ export default function RegisterNewPage() {
     setFormError('');
 
     try {
+      console.log('[REGISTER] Intentando conectar Freighter...');
       // Conectar wallet - el hook manejará todo
       const walletAccount = await connectWallet();
       if (!walletAccount) {
-        throw new Error('No se pudo conectar la wallet');
+        throw new Error('No se pudo conectar la wallet. ¿Está Freighter instalada?');
       }
+
+      console.log('[REGISTER] Wallet conectada:', walletAccount.publicKey.substring(0, 10) + '...');
 
       // Verificar si esta wallet ya está registrada (async)
       const existingUser = await getUserByWallet(walletAccount.publicKey);
@@ -145,24 +148,33 @@ export default function RegisterNewPage() {
         phone: formData.phone,
         companyName: selectedUserType === 'company' ? formData.companyName : undefined,
         businessLicense: selectedUserType === 'company' ? formData.businessLicense : undefined,
-        bankAccount: walletAccount.publicKey, // Usar la dirección de wallet como cuenta
+        bankAccount: walletAccount.publicKey,
         school: selectedUserType === 'client' ? formData.school : undefined,
         studentId: selectedUserType === 'client' ? formData.studentId : undefined,
         verified: true,
         status: 'active',
       });
 
+      console.log('[REGISTER] Usuario registrado exitosamente:', newUser.name);
+      
+      // Guardar en localStorage también para que esté disponible inmediatamente
+      localStorage.setItem('current_user', JSON.stringify(newUser));
+      localStorage.setItem('user_wallet', walletAccount.publicKey);
+      localStorage.setItem('user_type', selectedUserType);
+      localStorage.setItem('walletAddress', walletAccount.publicKey);
+      localStorage.setItem('isAuthenticated', 'true');
+
       // Ir a página de éxito
       setStep('success');
       
-      // Redirigir después de 2 segundos
+      // Redirigir después de 1.5 segundos
       setTimeout(() => {
         if (selectedUserType === 'company') {
           router.push('/company-dashboard');
         } else {
-          router.push('/dashboard');
+          router.push('/available-trips');
         }
-      }, 2000);
+      }, 1500);
 
     } catch (err: any) {
       console.error('Error registrando usuario con Freighter:', err);
@@ -220,17 +232,26 @@ export default function RegisterNewPage() {
         status: 'active',
       });
 
+      console.log('[REGISTER] Usuario registrado exitosamente:', newUser.name);
+      
+      // Guardar en localStorage también para que esté disponible inmediatamente
+      localStorage.setItem('current_user', JSON.stringify(newUser));
+      localStorage.setItem('user_wallet', manualWalletAddress);
+      localStorage.setItem('user_type', selectedUserType);
+      localStorage.setItem('walletAddress', manualWalletAddress);
+      localStorage.setItem('isAuthenticated', 'true');
+
       // Ir a página de éxito
       setStep('success');
       
-      // Redirigir después de 2 segundos
+      // Redirigir después de 1.5 segundos
       setTimeout(() => {
         if (selectedUserType === 'company') {
           router.push('/company-dashboard');
         } else {
-          router.push('/dashboard');
+          router.push('/available-trips');
         }
-      }, 2000);
+      }, 1500);
 
     } catch (err: any) {
       console.error('Error registrando usuario:', err);

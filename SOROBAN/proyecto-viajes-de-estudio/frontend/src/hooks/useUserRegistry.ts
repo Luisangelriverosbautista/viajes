@@ -105,6 +105,14 @@ export const useUserRegistry = () => {
         localStorage.setItem('current_user', JSON.stringify(newUser));
         localStorage.setItem('user_wallet', data.publicKey);
         localStorage.setItem('user_type', data.userType);
+        
+        // IMPORTANTE: Agregar también a user_registry para búsquedas inmediatas
+        console.log('3️⃣ AGREGANDO A REGISTRY LOCAL...');
+        const registry = readUserRegistry();
+        registry.push(newUser);
+        writeUserRegistry(registry);
+        console.log('✅ Usuario agregado a registry local');
+        
         console.log('✅ Datos de sesión guardados');
 
         console.log('✅ REGISTRO COMPLETADO EXITOSAMENTE');
@@ -120,33 +128,77 @@ export const useUserRegistry = () => {
   );
 
   /**
-   * Obtiene todos los usuarios registrados (desde la API/Soroban)
+   * Obtiene todos los usuarios registrados (combina localStorage + API)
+   * En Netlify, los datos nuevos están en localStorage
+   * En local dev, están en el archivo
    */
   const getAllUsers = useCallback(async (): Promise<UserRegistration[]> => {
     try {
+      // Leer desde localStorage (tiene datos más recientes en Netlify)
+      const localUsers = readUserRegistry();
+      
+      // También traer de la API para sincronización
       const response = await fetch('/api/users');
       if (!response.ok) throw new Error('Error obteniendo usuarios');
       
       const data = await response.json();
-      const users = data.users || [];
+      const apiUsers = data.users || [];
       
-      console.log('📊 [REGISTRY] getAllUsers() retornando:', users.length, 'usuarios');
-      if (users.length > 0) {
-        console.log('📊 [REGISTRY] Nombres:', users.map((u: any) => u.companyName || u.name).join(', '));
+      // Combinar: empezar con API y agregar cualquiera que esté solo en localStorage
+      const combinedUsers = [...apiUsers];
+      for (const localUser of localUsers) {
+        if (!combinedUsers.find(u => u.publicKey === localUser.publicKey)) {
+          combinedUsers.push(localUser);
+        }
       }
-      return users;
+      
+      console.log('📊 [REGISTRY] getAllUsers() retornando:', combinedUsers.length, 'usuarios (', apiUsers.length, 'API +', localUsers.length - apiUsers.length, 'locales)');
+      if (combinedUsers.length > 0) {
+        console.log('📊 [REGISTRY] Nombres:', combinedUsers.map((u: any) => u.companyName || u.name).join(', '));
+      }
+      return combinedUsers;
     } catch (error: any) {
       console.error('❌ Error obteniendo usuarios:', error.message);
-      return [];
+      // Si falla la API, retornar al menos los usuarios locales
+      const localUsers = readUserRegistry();
+      console.log('📊 [REGISTRY] Retornando usuarios locales como fallback:', localUsers.length);
+      return localUsers;
     }
   }, []);
 
   /**
-   * Busca un usuario por su wallet (desde la API)
+   * Busca un usuario por su wallet (primero en localStorage, luego en la API)
    */
   const getUserByWallet = useCallback(async (publicKey: string): Promise<UserRegistration | null> => {
-    const users = await getAllUsers();
-    return users.find(u => u.publicKey === publicKey) || null;
+    try {
+      // PRIMERO: Buscar en localStorage (está más actualizado en Netlify)
+      const localUsers = readUserRegistry();
+      const localUser = localUsers.find(u => u.publicKey === publicKey);
+      if (localUser) {
+        console.log(`✅ [REGISTRY] Usuario encontrado en localStorage: ${localUser.name}`);
+        return localUser;
+      }
+
+      // SEGUNDO: Si no está en localStorage, buscar en API
+      console.log('[REGISTRY] Usuario no encontrado localmente, buscando en API...');
+      const users = await getAllUsers();
+      const user = users.find(u => u.publicKey === publicKey) || null;
+      
+      // Si lo encontramos en API, agrégalo al localStorage para próximas búsquedas
+      if (user) {
+        console.log(`✅ [REGISTRY] Usuario encontrado en API: ${user.name}, agregando a localStorage`);
+        const registry = readUserRegistry();
+        if (!registry.find(u => u.publicKey === publicKey)) {
+          registry.push(user);
+          writeUserRegistry(registry);
+        }
+      }
+      
+      return user;
+    } catch (error: any) {
+      console.error('❌ Error buscando usuario:', error.message);
+      return null;
+    }
   }, [getAllUsers]);
 
   /**
