@@ -50,11 +50,11 @@ export default function CompanyDashboardPage() {
   useEffect(() => {
     const user = getCurrentUser();
     if (!user || user.userType !== 'company') {
-      console.log('âŒ [DASHBOARD] No es empresa o no hay usuario');
+      console.log('[DASHBOARD] No es empresa o no hay usuario');
       router.push('/login');
       return;
     }
-    console.log('âœ… [DASHBOARD] Empresa encontrada:', user.companyName, 'Wallet:', user.publicKey);
+    console.log('[DASHBOARD] Empresa encontrada:', user.companyName, 'Wallet:', user.publicKey);
     setCurrentUser(user);
     loadTripOffersFromAPI(user.publicKey);
     setIsInitialized(true);
@@ -62,16 +62,16 @@ export default function CompanyDashboardPage() {
 
   const loadTripOffers = (walletKey?: string) => {
     try {
-      // Usar wallet de currentUser si estÃ¡ disponible
+      // Usar wallet de currentUser si está disponible
       const wallet = walletKey || currentUser?.publicKey || account?.publicKey;
       if (!wallet) {
-        console.error('âŒ [DASHBOARD] No hay wallet disponible');
+        console.error('[DASHBOARD] No hay wallet disponible');
         return;
       }
       
-      console.log(`ðŸ“‹ [DASHBOARD] Cargando viajes para wallet: ${wallet.substring(0, 8)}...`);
+      console.log(`[DASHBOARD] Cargando viajes para wallet: ${wallet.substring(0, 8)}...`);
       const data = localStorage.getItem(`company_trips_${wallet}`);
-      console.log(`ðŸ“‹ [DASHBOARD] Datos encontrados:`, data ? JSON.parse(data).length + ' viajes' : 'ninguno');
+      console.log(`[DASHBOARD] Datos encontrados:`, data ? JSON.parse(data).length + ' viajes' : 'ninguno');
       
       if (data) {
         setTripOffers(JSON.parse(data));
@@ -126,7 +126,7 @@ export default function CompanyDashboardPage() {
     // Usar currentUser.publicKey como fuente de verdad
     const walletKey = currentUser?.publicKey || account?.publicKey;
     if (!walletKey) {
-      console.error('âŒ [DASHBOARD] No hay wallet disponible para guardar viaje');
+      console.error('[DASHBOARD] No hay wallet disponible para guardar viaje');
       alert('Error: No hay wallet disponible');
       return;
     }
@@ -150,7 +150,7 @@ export default function CompanyDashboardPage() {
     };
 
     try {
-      console.log(`ðŸ“¤ [DASHBOARD] Guardando viaje en API para wallet ${walletKey.substring(0, 8)}...`);
+      console.log(`[DASHBOARD] Guardando viaje en API para wallet ${walletKey.substring(0, 8)}...`);
       
       const response = await fetch('/api/trips', {
         method: 'POST',
@@ -189,7 +189,7 @@ export default function CompanyDashboardPage() {
       loadTripOffersFromAPI(walletKey);
       setShowModal(false);
     } catch (error) {
-      console.error('âŒ [DASHBOARD] Error guardando viaje:', error);
+      console.error('[DASHBOARD] Error guardando viaje:', error);
       alert('Error al guardar el viaje. Por favor intenta de nuevo.');
     }
   };
@@ -198,7 +198,7 @@ export default function CompanyDashboardPage() {
     try {
       const wallet = walletKey || currentUser?.publicKey || account?.publicKey;
       if (!wallet) {
-        console.error('âŒ [DASHBOARD] No hay wallet disponible');
+        console.error('[DASHBOARD] No hay wallet disponible');
         return;
       }
       
@@ -224,10 +224,10 @@ export default function CompanyDashboardPage() {
   };
 
   const handleDeleteTrip = async (tripId: string) => {
-    if (confirm('Â¿EstÃ¡s seguro de que deseas eliminar esta oferta?')) {
+    if (confirm('¿Estás seguro de que deseas eliminar esta oferta?')) {
       const walletKey = currentUser?.publicKey || account?.publicKey;
       if (!walletKey) {
-        console.error('âŒ [DASHBOARD] No hay wallet disponible para eliminar viaje');
+        console.error('[DASHBOARD] No hay wallet disponible para eliminar viaje');
         return;
       }
       
@@ -242,11 +242,11 @@ export default function CompanyDashboardPage() {
           throw new Error(`API error: ${response.status}`);
         }
 
-        console.log(`âœ… [DASHBOARD] Viaje eliminado exitosamente`);
+        console.log(`[DASHBOARD] Viaje eliminado exitosamente`);
         // Recargar viajes desde la API
         loadTripOffersFromAPI(walletKey);
       } catch (error) {
-        console.error('âŒ [DASHBOARD] Error eliminando viaje:', error);
+        console.error('[DASHBOARD] Error eliminando viaje:', error);
         alert('Error al eliminar el viaje. Por favor intenta de nuevo.');
       }
     }
