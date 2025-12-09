@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWallet } from '@/contexts/WalletContext';
+import { useUserRegistry } from '@/hooks/useUserRegistry';
 import { useTripOffers } from '@/hooks/useTripOffers';
 import { LogOut, Wallet, Copy, Check, TrendingUp, X } from 'lucide-react';
 import TransactionHistory from '@/components/TransactionHistory';
@@ -12,6 +13,7 @@ import ReservationModal from '@/components/ReservationModal';
 export default function DashboardPage() {
   const router = useRouter();
   const { account, disconnectWallet } = useWallet();
+  const { getCurrentUser } = useUserRegistry();
   const { trips, loading, loadAllTrips } = useTripOffers();
   const [copied, setCopied] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -21,17 +23,25 @@ export default function DashboardPage() {
 
   useEffect(() => {
     setIsInitialized(true);
-    // Verificar si hay sesiÃ³n activa
+    // Verificar si hay sesión activa
     const walletAddress = localStorage.getItem('walletAddress');
     const isAuthenticated = localStorage.getItem('isAuthenticated');
     
     if (!walletAddress || !isAuthenticated) {
       router.push('/login');
+      return;
+    }
+
+    // Verificar tipo de usuario y redirigir si es empresa
+    const currentUser = getCurrentUser();
+    if (currentUser && currentUser.userType === 'company') {
+      router.push('/company-dashboard');
+      return;
     }
 
     // Cargar viajes desde Stellar
     loadAllTrips();
-  }, [router]);
+  }, [router, getCurrentUser]);
 
   if (!isInitialized || !account) {
     return (
@@ -140,9 +150,9 @@ export default function DashboardPage() {
               {/* Network Info */}
               <div className="bg-blue-500/10 border border-blue-400/30 rounded-lg p-4">
                 <p className="text-blue-300 text-sm">
-                  âœ“ Conectado a Stellar Testnet<br/>
-                  âœ“ Freighter wallet activa<br/>
-                  âœ“ Listo para realizar transacciones
+                  ✓ Conectado a Stellar Testnet<br/>
+                  ✓ Freighter wallet activa<br/>
+                  ✓ Listo para realizar transacciones
                 </p>
               </div>
             </div>
@@ -152,7 +162,7 @@ export default function DashboardPage() {
           <div className="space-y-4">
             {/* Available Trips */}
             <div className="bg-gradient-to-br from-stellar/20 to-cyan-500/20 rounded-2xl p-6 border border-stellar/30 shadow-xl">
-              <h3 className="text-lg font-bold text-white mb-4">ðŸŒ Viajes Disponibles</h3>
+              <h3 className="text-lg font-bold text-white mb-4">🌍 Viajes Disponibles</h3>
               <p className="text-gray-300 text-sm mb-4">
                 Explora viajes de estudio ofrecidos por empresas. Reserva y paga con tu wallet.
               </p>

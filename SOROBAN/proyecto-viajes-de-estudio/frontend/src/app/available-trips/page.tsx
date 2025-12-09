@@ -40,13 +40,24 @@ export default function AvailableTripsPage() {
     // Permitir tanto clientes como empresas ver viajes
     console.log(`[AVAILABLE-TRIPS] Usuario autenticado: ${user.userType} (${user.name || user.companyName})`);
     setCurrentUser(user);
+    
+    // Siempre cargar viajes al inicializar
+    const loadInitialData = async () => {
+      try {
+        await loadAllTrips();
+      } catch (error) {
+        console.error('[AVAILABLE-TRIPS] Error cargando viajes:', error);
+      }
+    };
+    
+    loadInitialData();
+    
     if (account?.publicKey) {
-      loadClientReservations(account.publicKey).then(res => setReservations(res));
+      loadClientReservations(account.publicKey).then(res => setReservations(res)).catch(e => console.error('Error cargando reservaciones:', e));
     }
-    // Cargar viajes disponibles
-    loadAllTrips();
+    
     setIsInitialized(true);
-  }, [router, account?.publicKey, loadAllTrips]);
+  }, [router, account?.publicKey]);
 
   // Función para refrescar viajes manualmente
   const handleRefreshTrips = async () => {

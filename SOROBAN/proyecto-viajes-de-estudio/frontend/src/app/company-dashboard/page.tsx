@@ -308,7 +308,7 @@ export default function CompanyDashboardPage() {
             className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-all"
           >
             <LogOut className="w-5 h-5" />
-            Cerrar SesiÃ³n
+            Cerrar Sesión
           </button>
         </div>
 
@@ -389,10 +389,10 @@ export default function CompanyDashboardPage() {
                     <p className="text-gray-400 text-sm">{trip.destination}</p>
                     <div className="mt-2 space-y-1">
                       {trip.highlights.slice(0, 2).map((h, idx) => (
-                        <p key={idx} className="text-gray-400 text-xs">âœ“ {h}</p>
+                        <p key={idx} className="text-gray-400 text-xs">✓ {h}</p>
                       ))}
                       {trip.highlights.length > 2 && (
-                        <p className="text-gray-400 text-xs">+{trip.highlights.length - 2} mÃ¡s</p>
+                        <p className="text-gray-400 text-xs">+{trip.highlights.length - 2} más</p>
                       )}
                     </div>
                   </div>
@@ -459,7 +459,7 @@ export default function CompanyDashboardPage() {
                   type="text"
                   value={formData.destination}
                   onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
-                  placeholder="ej. Ciudad de MÃ©xico"
+                  placeholder="ej. Ciudad de México"
                   className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-purple-500 focus:outline-none"
                   required
                 />
@@ -467,12 +467,12 @@ export default function CompanyDashboardPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-white font-semibold mb-2">DuraciÃ³n *</label>
+                  <label className="block text-white font-semibold mb-2">Duración *</label>
                   <input
                     type="text"
                     value={formData.duration}
                     onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                    placeholder="ej. 5 dÃ­as"
+                    placeholder="ej. 5 días"
                     className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-purple-500 focus:outline-none"
                     required
                   />
@@ -515,7 +515,7 @@ export default function CompanyDashboardPage() {
               </div>
 
               <div>
-                <label className="block text-white font-semibold mb-2">DescripciÃ³n</label>
+                <label className="block text-white font-semibold mb-2">Descripción</label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -526,11 +526,11 @@ export default function CompanyDashboardPage() {
               </div>
 
               <div>
-                <label className="block text-white font-semibold mb-2">Puntos destacados (uno por lÃ­nea)</label>
+                <label className="block text-white font-semibold mb-2">Puntos destacados (uno por línea)</label>
                 <textarea
                   value={formData.highlights}
                   onChange={(e) => setFormData({ ...formData, highlights: e.target.value })}
-                  placeholder="Museo de AntropologÃ­a&#10;PirÃ¡mides de TeotihuacÃ¡n&#10;Xochimilco"
+                  placeholder="Museo de Antropología&#10;Pirámides de Teotihuacán&#10;Xochimilco"
                   rows={4}
                   className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:border-purple-500 focus:outline-none font-mono text-sm"
                 />

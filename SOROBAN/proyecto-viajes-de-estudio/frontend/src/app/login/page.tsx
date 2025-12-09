@@ -9,33 +9,61 @@ export const dynamic = 'force-dynamic';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useWallet } from '@/contexts/WalletContext';
+import { useUserRegistry } from '@/hooks/useUserRegistry';
 import { Wallet, AlertCircle, Loader, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
   const { account, freighterAvailable, isConnecting, connectWallet, error, isCheckingFreighter } = useWallet();
+  const { getUserByWallet } = useUserRegistry();
   const [isInitialized, setIsInitialized] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   // Verificar estado inicial de Freighter
   useEffect(() => {
     setIsInitialized(true);
   }, []);
 
-  // Si ya está conectado, guardar sesión y redirigir
+  // Si ya está conectado, guardar sesión y redirigir al dashboard correcto
   useEffect(() => {
     if (account) {
-      // Guardar sesión en localStorage
-      localStorage.setItem('walletAddress', account.publicKey);
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('loginTime', new Date().toISOString());
-      
-      // Pequeño delay para mostrar éxito
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 1500);
+      const handleRedirect = async () => {
+        try {
+          // Buscar usuario registrado
+          const user = await getUserByWallet(account.publicKey);
+          
+          if (!user) {
+            setLoginError('Wallet no registrada. Por favor, regístrate primero.');
+            setTimeout(() => {
+              router.push('/register');
+            }, 2000);
+            return;
+          }
+
+          // Guardar sesión en localStorage
+          localStorage.setItem('walletAddress', account.publicKey);
+          localStorage.setItem('isAuthenticated', 'true');
+          localStorage.setItem('loginTime', new Date().toISOString());
+          localStorage.setItem('current_user', JSON.stringify(user));
+          localStorage.setItem('user_type', user.userType);
+
+          // Determinar dashboard basado en userType
+          const destination = user.userType === 'company' ? '/company-dashboard' : '/available-trips';
+          
+          // Pequeño delay para mostrar éxito
+          setTimeout(() => {
+            router.push(destination);
+          }, 1500);
+        } catch (err) {
+          console.error('Error en redirección:', err);
+          setLoginError('Error al procesar tu sesión. Intenta de nuevo.');
+        }
+      };
+
+      handleRedirect();
     }
-  }, [account, router]);
+  }, [account, router, getUserByWallet]);
 
   const handleConnectClick = async () => {
     if (!freighterAvailable) {
@@ -74,16 +102,30 @@ export default function LoginPage() {
         <div className="space-y-6">
           {/* Success State - Connected */}
           {account && (
-            <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 backdrop-blur-md rounded-2xl p-8 border border-green-400/40 shadow-xl text-center animate-in fade-in">
+            <div className={`bg-gradient-to-br backdrop-blur-md rounded-2xl p-8 border shadow-xl text-center animate-in fade-in ${
+              loginError 
+                ? 'from-red-500/20 to-orange-500/20 border-red-400/40' 
+                : 'from-green-500/20 to-emerald-500/20 border-green-400/40'
+            }`}>
               <div className="mb-4 flex justify-center">
-                <CheckCircle className="w-16 h-16 text-green-400" />
+                {loginError ? (
+                  <AlertCircle className="w-16 h-16 text-red-400" />
+                ) : (
+                  <CheckCircle className="w-16 h-16 text-green-400" />
+                )}
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">¡Sesión Iniciada!</h2>
-              <p className="text-green-200 mb-4">Tu wallet está conectada correctamente</p>
+              <h2 className={`text-2xl font-bold mb-2 ${loginError ? 'text-red-300' : 'text-white'}`}>
+                {loginError ? 'Error en la sesión' : '¡Sesión Iniciada!'}
+              </h2>
+              <p className={`mb-4 ${loginError ? 'text-red-200' : 'text-green-200'}`}>
+                {loginError || 'Tu wallet está conectada correctamente'}
+              </p>
               <p className="text-sm text-gray-300 break-all font-mono bg-black/30 rounded-lg p-3 mb-4">
                 {account.publicKey.slice(0, 10)}...{account.publicKey.slice(-8)}
               </p>
-              <p className="text-sm text-gray-300">Redirigiendo al dashboard...</p>
+              <p className="text-sm text-gray-300">
+                {loginError ? 'Redirigiendo al registro...' : 'Verificando tu usuario y redirigiendo...'}
+              </p>
               <div className="mt-4">
                 <Loader className="w-5 h-5 animate-spin mx-auto text-stellar" />
               </div>
