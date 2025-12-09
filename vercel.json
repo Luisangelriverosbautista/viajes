@@ -1,0 +1,6 @@
+{
+  "buildCommand": "cd SOROBAN/proyecto-viajes-de-estudio/frontend && npm run build",
+  "devCommand": "cd SOROBAN/proyecto-viajes-de-estudio/frontend && npm run dev",
+  "installCommand": "cd SOROBAN/proyecto-viajes-de-estudio/frontend && npm install",
+  "outputDirectory": "SOROBAN/proyecto-viajes-de-estudio/frontend/.next"
+}

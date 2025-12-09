@@ -1,0 +1,194 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f8fafc; /* light slate */
+  --foreground: #0f172a; /* slate-900 */
+  --primary: #0ea5a4; /* teal-500 */
+  --accent: #06b6d4; /* cyan-500 */
+  --muted: #94a3b8; /* slate-400 */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #071124; /* dark navy */
+    --foreground: #e6eef6; /* light */
+    --primary: #0891b2; /* teal-600 */
+    --accent: #06b6d4;
+    --muted: #94a3b8;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Custom animations for passkey interactions */
+@keyframes fingerprint-scan {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+.fingerprint-scan {
+  animation: fingerprint-scan 2s ease-in-out infinite;
+}
+
+/* Glassmorphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+  .glass {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* Hero image and animations */
+.hero-image {
+  position: relative;
+  isolation: isolate;
+}
+.hero-image img {
+  transition: transform 0.7s cubic-bezier(.22,.99,.35,1);
+}
+.hero-image .overlay {
+  mix-blend-mode: multiply;
+}
+
+@keyframes floaty {
+  0% { transform: translateY(0px) }
+  50% { transform: translateY(-10px) }
+  100% { transform: translateY(0px) }
+}
+.animate-float {
+  animation: floaty 6s ease-in-out infinite;
+}
+
+/* subtle glass inner border for cards */
+.inner-border {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+/* Improve image loading performance */
+img[alt="Viajes a México"] {
+  will-change: transform;
+}
+
+/* Carousel styles */
+.carousel { 
+  position: relative; 
+  width: 100%; 
+  height: 400px; 
+  @apply md:h-[500px] lg:h-[600px];
+}
+.carousel .slide { 
+  display: block; 
+}
+.carousel-btn { 
+  position: absolute; 
+  top: 50%; 
+  transform: translateY(-50%); 
+  z-index: 20; 
+  background: rgba(0,0,0,0.4); 
+  color: white; 
+  width: 48px; 
+  height: 48px; 
+  border-radius: 999px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  font-size: 1.5rem; 
+  border: none; 
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.carousel-btn.left-3 { 
+  left: 12px; 
+}
+.carousel-btn.right-3 { 
+  right: 12px; 
+}
+.carousel .slides { 
+  position: relative; 
+  width: 100%; 
+  height: 100%; 
+}
+.slide img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+  display: block;
+}
+.slide { 
+  transition: opacity 1s ease; 
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carousel * { 
+    transition: none !important; 
+    animation: none !important;
+  }
+}
+
+.carousel-btn:hover { 
+  background: rgba(0,0,0,0.7); 
+  transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.carousel:focus { 
+  outline: 2px solid rgba(255,255,255,0.12); 
+  outline-offset: 2px;
+}
+
+.slide { 
+  will-change: opacity, transform;
+}
+
+/* caption card styling */
+.caption-card {
+  background: linear-gradient(180deg, rgba(0,0,0,0.5), rgba(0,0,0,0.3));
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  animation: slideInUp 0.6s cubic-bezier(.22,.99,.35,1);
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.caption-card .font-semibold { 
+  font-size: 1rem;
+}
+.caption-card p { 
+  margin: 0;
+}

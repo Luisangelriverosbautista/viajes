@@ -1,0 +1,29 @@
+# Excluir archivos de raíz que no son necesarios
+*.md
+*.txt
+Informe de Viabilidad.md
+Justificacion.md
+Matriz de Riesgos.md
+PlanComunicacion.md
+Presupuesto.md
+PROYECTO-COMPLETO-RESUMEN.md
+README.md
+Tablero.md
+DOCUMENTACION-INDEX.md
+netlify.toml
+
+# Excluir carpetas innecesarias en SOROBAN
+SOROBAN/proyecto-viajes-de-estudio/stellar/
+SOROBAN/proyecto-viajes-de-estudio/contract/
+SOROBAN/proyecto-viajes-de-estudio/mcp-servers/
+SOROBAN/proyecto-viajes-de-estudio/scripts/
+SOROBAN/proyecto-viajes-de-estudio/data/
+SOROBAN/proyecto-viajes-de-estudio/*.md
+SOROBAN/proyecto-viajes-de-estudio/*.txt
+SOROBAN/proyecto-viajes-de-estudio/*.sh
+
+# Excluir .git
+.git/
+
+# Excluir node_modules
+**/node_modules/
