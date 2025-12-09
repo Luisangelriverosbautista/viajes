@@ -38,7 +38,7 @@ export const useTripOffers = () => {
     try {
       setLoading(true);
       
-      const response = await fetch('/api/trips');
+      const response = await fetch('/api/trips?t=' + Date.now()); // Force no cache
       if (!response.ok) {
         throw new Error(`Failed to fetch trips: ${response.status}`);
       }
@@ -47,16 +47,18 @@ export const useTripOffers = () => {
       
       if (!data.success) {
         console.error('[HOOK] API error:', data.message);
-        return;
+        return null;
       }
       
       const activeTrips = data.trips.filter((t: TripOffer) => t.status === 'active');
-      console.log(`[HOOK] Total de viajes cargados: ${data.trips.length}`);
-      console.log(`[HOOK] Viajes activos: ${activeTrips.length}`);
+      console.log(`[HOOK] 📡 Total de viajes en API: ${data.trips.length}`);
+      console.log(`[HOOK] 🟢 Viajes activos: ${activeTrips.length}`);
       
       setTrips(activeTrips);
+      return activeTrips;
     } catch (error) {
-      console.error('[HOOK] Error cargando viajes:', error);
+      console.error('[HOOK] ❌ Error cargando viajes:', error);
+      return null;
     } finally {
       setLoading(false);
     }

@@ -62,15 +62,37 @@ export default function AvailableTripsPage() {
       loadClientReservations(account.publicKey).then(res => setReservations(res)).catch(e => console.error('Error cargando reservaciones:', e));
     }
     
-    // Sincronizar cada 5 segundos (refleja pagos y viajes nuevos)
-    const syncInterval = setInterval(() => {
-      console.log('[AVAILABLE-TRIPS] Sincronizando viajes nuevos y pagos...');
-      loadAllTrips().catch(e => console.error('Error sync:', e));
-    }, 5000);
+    // Sincronizar cada 2 segundos (refleja pagos y viajes nuevos rápidamente)
+    const syncInterval = setInterval(async () => {
+      try {
+        console.log('[AVAILABLE-TRIPS] 🔄 Sincronizando (polling)...');
+        await loadAllTrips();
+        
+        // También sincronizar reservas del usuario actual
+        if (account?.publicKey) {
+          const updated = await loadClientReservations(account.publicKey);
+          setReservations(updated);
+        }
+        
+        console.log(`[AVAILABLE-TRIPS] ✅ Sincronización completada`);
+      } catch (error) {
+        console.error('[AVAILABLE-TRIPS] ❌ Error sync:', error);
+      }
+    }, 2000);
+    
+    // También sincronizar cuando vuelve a la ventana
+    const handleFocus = () => {
+      console.log('[AVAILABLE-TRIPS] 👁️ Ventana en foco - sincronizando...');
+      loadAllTrips().catch(e => console.error('Error focus sync:', e));
+    };
+    window.addEventListener('focus', handleFocus);
     
     setIsInitialized(true);
     
-    return () => clearInterval(syncInterval);
+    return () => {
+      clearInterval(syncInterval);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [router, account?.publicKey]);
 
   // Función para refrescar viajes manualmente

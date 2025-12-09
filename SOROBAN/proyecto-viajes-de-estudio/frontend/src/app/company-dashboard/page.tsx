@@ -187,13 +187,18 @@ export default function CompanyDashboardPage() {
       };
 
       // Guardar en API local
-      await fetch('/api/trips', {
+      const apiResponse = await fetch('/api/trips', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(trip),
       });
 
+      if (!apiResponse.ok) {
+        console.warn('⚠️ Error en respuesta API:', apiResponse.status);
+      }
+
       console.log('✅ Viaje sincronizado en API local');
+      console.log('📡 Viaje disponible para otros usuarios en ~2 segundos');
 
       // Guardar en localStorage
       const storageKey = `company_trips_${walletKey}`;
@@ -218,7 +223,7 @@ export default function CompanyDashboardPage() {
       setEditingTrip(null);
       setShowModal(false);
 
-      alert('✅ Viaje creado exitosamente en blockchain');
+      alert('✅ Viaje creado exitosamente en blockchain\n📡 Visible para estudiantes en ~2 segundos');
     } catch (error: any) {
       console.error('❌ Error creando viaje:', error);
       alert(`Error: ${error.message}`);

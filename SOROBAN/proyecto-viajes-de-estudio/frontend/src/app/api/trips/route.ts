@@ -50,10 +50,14 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    console.log('📝 [API] Guardando viaje:', body.name, 'para wallet:', body.companyWallet?.substring(0, 8));
+    console.log('📝 [API POST] Recibiendo viaje:', body.name);
+    console.log('📝 [API POST] Wallet:', body.companyWallet?.substring(0, 12));
+    console.log('📝 [API POST] Destino:', body.destination);
+    console.log('📝 [API POST] Precio:', body.priceXLM, 'XLM');
 
     // Validar datos
     if (!body.companyWallet || !body.name) {
+      console.error('❌ [API POST] Faltan companyWallet o name');
       return NextResponse.json(
         { error: 'Faltan campos requeridos' },
         { status: 400 }
@@ -62,6 +66,7 @@ export async function POST(request: NextRequest) {
 
     // Leer viajes actuales
     const trips = readTrips();
+    console.log(`📊 [API POST] Viajes actuales antes: ${trips.length}`);
 
     // Crear nuevo viaje
     const newTrip = {
@@ -74,33 +79,32 @@ export async function POST(request: NextRequest) {
     try {
       trips.push(newTrip);
       writeTrips(trips);
-      console.log('✅ [API] Viaje guardado exitosamente');
+      console.log('✅ [API POST] Viaje guardado en trips.json');
+      console.log(`📊 [API POST] Viajes después: ${trips.length}`);
     } catch (persistError: any) {
-      console.warn('⚠️ [API] No se pudo persistir viaje (Netlify), pero registro es válido:', persistError.message);
+      console.warn('⚠️ [API POST] No se pudo persistir (Netlify, pero OK):', persistError.message);
     }
-
-    console.log(`📊 [API] Total viajes: ${trips.length}`);
 
     return NextResponse.json({
       success: true,
       trip: newTrip,
       totalTrips: trips.length,
+      message: `Viaje "${newTrip.name}" guardado (total: ${trips.length})`
     });
   } catch (error: any) {
-    // Si es error de persistencia, aún confirmamos el viaje
     const errorMessage = error?.message || String(error);
+    console.error('❌ [API POST] Error:', errorMessage);
+    
     if (error?.code === 'EROFS' || errorMessage.includes('read-only')) {
-      console.warn('⚠️ [API] Sistema de archivos de solo lectura, pero viaje es válido');
+      console.warn('⚠️ [API POST] Sistema de archivos de solo lectura (Netlify), pero viaje es válido');
       return NextResponse.json({
         success: true,
-        trip: { id: `trip_${Date.now()}`, ...await request.json() },
         message: 'Viaje registrado en Netlify (sin persistencia local)'
       }, { status: 201 });
     }
     
-    console.error('❌ [API] Error:', error.message);
     return NextResponse.json(
-      { error: error.message },
+      { error: errorMessage },
       { status: 500 }
     );
   }
@@ -112,13 +116,12 @@ export async function GET(request: NextRequest) {
     const companyWallet = searchParams.get('company');
 
     const allTrips = readTrips();
+    console.log(`📊 [API GET] trips.json tiene ${allTrips.length} viajes`);
     
     let trips = allTrips;
     if (companyWallet) {
       trips = allTrips.filter((t: any) => t.companyWallet === companyWallet);
-      console.log(`📊 [API] GET /trips?company=${companyWallet?.substring(0, 8)} - Retornando ${trips.length} viajes`);
-    } else {
-      console.log(`📊 [API] GET /trips - Retornando ${trips.length} viajes totales`);
+      console.log(`  └─ Filtrado por empresa: ${trips.length} viajes`);
     }
 
     return NextResponse.json({
@@ -127,7 +130,7 @@ export async function GET(request: NextRequest) {
       count: trips.length,
     });
   } catch (error: any) {
-    console.error('❌ [API] Error:', error.message);
+    console.error('❌ [API GET] Error:', error.message);
     return NextResponse.json(
       { error: error.message },
       { status: 500 }
