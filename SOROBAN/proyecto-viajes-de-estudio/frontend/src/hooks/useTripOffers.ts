@@ -51,10 +51,18 @@ export const useTripOffers = () => {
       }
       
       const activeTrips = data.trips.filter((t: TripOffer) => t.status === 'active');
-      console.log(`[HOOK] 📡 Total de viajes en API: ${data.trips.length}`);
-      console.log(`[HOOK] 🟢 Viajes activos: ${activeTrips.length}`);
       
-      setTrips(activeTrips);
+      // 🔄 DEDUPLICACIÓN: Solo actualizar si cambió el contenido
+      const currentTripsStr = JSON.stringify(trips);
+      const newTripsStr = JSON.stringify(activeTrips);
+      
+      if (currentTripsStr !== newTripsStr) {
+        console.log(`[HOOK] 📡 Cambios detectados: ${trips.length} → ${activeTrips.length} viajes`);
+        setTrips(activeTrips);
+      } else {
+        console.log(`[HOOK] ✓ Sin cambios (${activeTrips.length} viajes)`);
+      }
+      
       return activeTrips;
     } catch (error) {
       console.error('[HOOK] ❌ Error cargando viajes:', error);
@@ -62,7 +70,7 @@ export const useTripOffers = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [trips]);
 
   // Cargar reservas del cliente actual
   const loadClientReservations = useCallback(async (clientWallet: string): Promise<ClientReservation[]> => {

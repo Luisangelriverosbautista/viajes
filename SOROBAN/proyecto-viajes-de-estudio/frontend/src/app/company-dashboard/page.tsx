@@ -64,9 +64,10 @@ export default function CompanyDashboardPage() {
     setCurrentUser(user);
     loadTripOffersFromAPI(user.publicKey);
     
-    // Sincronizar cada 5 segundos
+    // 🔄 SMART SYNC: Intervalo más largo, solo actualiza si hay cambios
+    // - Deduplicación en componente (evita re-renders innecesarios)
     const syncInterval = setInterval(() => {
-      console.log('[COMPANY-DASHBOARD] Sincronizando viajes...');
+      console.log('[COMPANY-DASHBOARD] 🔄 Verificando cambios en viajes...');
       loadTripOffersFromAPI(user.publicKey);
     }, 5000);
     

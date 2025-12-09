@@ -46,11 +46,11 @@ export default function AvailableTripsPage() {
     console.log(`[AVAILABLE-TRIPS] Usuario: ${user.userType} (${user.name || user.companyName})`);
     setCurrentUser(user);
     
-    // Cargar viajes
+    // Cargar viajes ONCE al montar
     const loadInitialData = async () => {
       try {
         await loadAllTrips();
-        console.log('[AVAILABLE-TRIPS] Viajes cargados');
+        console.log('[AVAILABLE-TRIPS] ✓ Viajes cargados (inicial)');
       } catch (error) {
         console.error('[AVAILABLE-TRIPS] Error cargando viajes:', error);
       }
@@ -62,10 +62,13 @@ export default function AvailableTripsPage() {
       loadClientReservations(account.publicKey).then(res => setReservations(res)).catch(e => console.error('Error cargando reservaciones:', e));
     }
     
-    // Sincronizar cada 2 segundos (refleja pagos y viajes nuevos rápidamente)
+    // 🔄 SMART SYNC: Optimizado para menos flickering
+    // - Intervalo: 10 segundos (balance entre real-time y performance)
+    // - Deduplicación automática en hook (no actualiza si no cambia)
+    // - Reservas se guardan inmediatamente en localStorage
     const syncInterval = setInterval(async () => {
       try {
-        console.log('[AVAILABLE-TRIPS] 🔄 Sincronizando (polling)...');
+        console.log('[AVAILABLE-TRIPS] 🔄 Sincronizando cambios (10s)...');
         await loadAllTrips();
         
         // También sincronizar reservas del usuario actual
@@ -73,16 +76,14 @@ export default function AvailableTripsPage() {
           const updated = await loadClientReservations(account.publicKey);
           setReservations(updated);
         }
-        
-        console.log(`[AVAILABLE-TRIPS] ✅ Sincronización completada`);
       } catch (error) {
         console.error('[AVAILABLE-TRIPS] ❌ Error sync:', error);
       }
-    }, 2000);
+    }, 10000);  // ← 10 segundos (menos flickering, balance con real-time)
     
-    // También sincronizar cuando vuelve a la ventana
+    // Sincronizar cuando vuelve a la ventana (enfoque)
     const handleFocus = () => {
-      console.log('[AVAILABLE-TRIPS] 👁️ Ventana en foco - sincronizando...');
+      console.log('[AVAILABLE-TRIPS] 👁️ Ventana en foco - sincronizando ahora...');
       loadAllTrips().catch(e => console.error('Error focus sync:', e));
     };
     window.addEventListener('focus', handleFocus);
@@ -186,13 +187,20 @@ export default function AvailableTripsPage() {
       }
 
       setPaymentStatus('success');
-      setReservations([...reservations, {
+      
+      // ✅ Guardar en localStorage INMEDIATAMENTE para que aparezca sin delay
+      const newReservation = {
         ...reservation!,
-        status: 'completed',
+        status: 'completed' as const,
         txHash: paymentResult.tx_hash,
-      }]);
+      };
+      
+      setReservations([...reservations, newReservation]);
+      
+      // También guardar en localStorage para persistencia
+      localStorage.setItem(`reservation_${reservation?.id}`, JSON.stringify(newReservation));
 
-      console.log('✅ Reserva guardada localmente');
+      console.log('✅ Reserva guardada localmente + localStorage');
 
       setTimeout(() => {
         setShowReservationModal(false);
