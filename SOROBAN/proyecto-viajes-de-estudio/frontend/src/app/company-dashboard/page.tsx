@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useWallet } from '@/contexts/WalletContext';
 import { useUserRegistry } from '@/hooks/useUserRegistry';
 import { usePersistUserRegistry } from '@/hooks/usePersistUserRegistry';
+import { useSorobanTrips } from '@/hooks/useSorobanTrips';
 import { Building2, LogOut, Plus, DollarSign, Users, TrendingUp, Edit, Trash2 } from 'lucide-react';
 
 interface TripOffer {
@@ -30,6 +31,7 @@ export default function CompanyDashboardPage() {
   const router = useRouter();
   const { account, disconnectWallet } = useWallet();
   const { getCurrentUser } = useUserRegistry();
+  const { createTrip, isProcessing: isSorobanProcessing, sorobanError } = useSorobanTrips();
 
   const [currentUser, setCurrentUser] = useState(getCurrentUser());
   const [tripOffers, setTripOffers] = useState<TripOffer[]>([]);
@@ -123,74 +125,90 @@ export default function CompanyDashboardPage() {
       return;
     }
 
-    // Usar currentUser.publicKey como fuente de verdad
     const walletKey = currentUser?.publicKey || account?.publicKey;
     if (!walletKey) {
-      console.error('[DASHBOARD] No hay wallet disponible para guardar viaje');
       alert('Error: No hay wallet disponible');
       return;
     }
 
-    const trip: TripOffer = {
-      id: editingTrip?.id || `trip_${Date.now()}`,
-      companyWallet: walletKey,
-      name: formData.name,
-      destination: formData.destination,
-      duration: formData.duration,
-      priceXLM: parseFloat(formData.priceXLM),
-      description: formData.description,
-      maxParticipants: parseInt(formData.maxParticipants),
-      currentBookings: editingTrip?.currentBookings || 0,
-      status: 'active',
-      createdAt: editingTrip?.createdAt || new Date().toISOString(),
-      highlights: formData.highlights
-        .split('\n')
-        .filter(h => h.trim())
-        .map(h => h.trim()),
-    };
-
     try {
-      console.log(`[DASHBOARD] Guardando viaje en API para wallet ${walletKey.substring(0, 8)}...`);
-      
-      const response = await fetch('/api/trips', {
+      console.log('🟦 === CREANDO VIAJE EN SOROBAN ===');
+      console.log('📝 Nombre:', formData.name);
+      console.log('📍 Destino:', formData.destination);
+      console.log('💰 Precio:', formData.priceXLM, 'XLM');
+
+      // Crear en Soroban blockchain
+      const txHash = await createTrip({
+        destination: formData.destination,
+        description: formData.description,
+        price_xlm: parseFloat(formData.priceXLM),
+        available_spots: parseInt(formData.maxParticipants),
+        start_date: Math.floor(Date.now() / 1000),
+        end_date: Math.floor(Date.now() / 1000) + (parseInt(formData.duration) * 86400 || 86400),
+      });
+
+      if (!txHash) {
+        throw new Error(sorobanError || 'Error creando viaje en blockchain');
+      }
+
+      console.log('✅ Viaje creado en blockchain');
+      console.log('📊 TX Hash:', txHash);
+
+      // También guardar localmente para sincronización
+      const trip: TripOffer = {
+        id: `trip_${Date.now()}`,
+        companyWallet: walletKey,
+        name: formData.name,
+        destination: formData.destination,
+        duration: formData.duration,
+        priceXLM: parseFloat(formData.priceXLM),
+        description: formData.description,
+        maxParticipants: parseInt(formData.maxParticipants),
+        currentBookings: 0,
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        highlights: formData.highlights
+          .split('\n')
+          .filter(h => h.trim())
+          .map(h => h.trim()),
+      };
+
+      // Guardar en API local
+      await fetch('/api/trips', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(trip),
       });
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
+      console.log('✅ Viaje sincronizado en API local');
 
-      const result = await response.json();
-      console.log(`✅ [DASHBOARD] Viaje guardado en API exitosamente`, result);
+      // Guardar en localStorage
+      const storageKey = `company_trips_${walletKey}`;
+      const existing = localStorage.getItem(storageKey);
+      const trips = existing ? JSON.parse(existing) : [];
+      trips.push(trip);
+      localStorage.setItem(storageKey, JSON.stringify(trips));
 
-      // Guardar también en localStorage como respaldo (Netlify /tmp no persiste)
-      try {
-        const storageKey = `company_trips_${walletKey}`;
-        const existing = localStorage.getItem(storageKey);
-        const trips = existing ? JSON.parse(existing) : [];
-        
-        // Actualizar si ya existe, o agregar si es nuevo
-        const index = trips.findIndex((t: TripOffer) => t.id === trip.id);
-        if (index >= 0) {
-          trips[index] = trip;
-        } else {
-          trips.push(trip);
-        }
-        
-        localStorage.setItem(storageKey, JSON.stringify(trips));
-        console.log(`💾 [DASHBOARD] Viaje guardado en localStorage: ${trips.length} viajes`);
-      } catch (e) {
-        console.warn('⚠️ [DASHBOARD] No se pudo guardar en localStorage:', e);
-      }
-
-      // Recargar viajes desde la API
-      loadTripOffersFromAPI(walletKey);
+      // Recargar lista
+      setTripOffers([...tripOffers, trip]);
+      
+      // Limpiar formulario
+      setFormData({
+        name: '',
+        destination: '',
+        duration: '',
+        priceXLM: '',
+        description: '',
+        maxParticipants: '',
+        highlights: '',
+      });
+      setEditingTrip(null);
       setShowModal(false);
-    } catch (error) {
-      console.error('[DASHBOARD] Error guardando viaje:', error);
-      alert('Error al guardar el viaje. Por favor intenta de nuevo.');
+
+      alert('✅ Viaje creado exitosamente en blockchain');
+    } catch (error: any) {
+      console.error('❌ Error creando viaje:', error);
+      alert(`Error: ${error.message}`);
     }
   };
 

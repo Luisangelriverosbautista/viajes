@@ -7,6 +7,7 @@ import { useWallet } from '@/contexts/WalletContext';
 import { useUserRegistry } from '@/hooks/useUserRegistry';
 import { usePersistUserRegistry } from '@/hooks/usePersistUserRegistry';
 import { useTripOffers, TripOffer, ClientReservation } from '@/hooks/useTripOffers';
+import { useSorobanTrips } from '@/hooks/useSorobanTrips';
 import { MapPin, Clock, Users, DollarSign, Star, LogOut, ArrowLeft, Wallet, Check, Loader, RotateCw } from 'lucide-react';
 
 export default function AvailableTripsPage() {
@@ -17,6 +18,7 @@ export default function AvailableTripsPage() {
   const { account, disconnectWallet } = useWallet();
   const { getCurrentUser } = useUserRegistry();
   const { trips, loading, loadAllTrips, loadClientReservations, createReservation, confirmReservationPayment } = useTripOffers();
+  const { bookTrip, isProcessing: isSorobanProcessing, sorobanError } = useSorobanTrips();
 
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [reservations, setReservations] = useState<ClientReservation[]>([]);
@@ -103,8 +105,31 @@ export default function AvailableTripsPage() {
 
     try {
       setProcessingPayment(true);
-      
-      // Crear reserva (ahora es async)
+
+      console.log('🟦 === INICIANDO RESERVACIÓN Y PAGO REAL ===');
+      console.log('📍 Viaje:', selectedTrip.destination);
+      console.log('💰 Precio:', selectedTrip.priceXLM, 'XLM');
+      console.log('🏢 Empresa:', selectedTrip.companyWallet);
+
+      // Usar Soroban para pago REAL
+      const paymentResult = await bookTrip(
+        selectedTrip.id,
+        {
+          destination: selectedTrip.destination,
+          priceXLM: selectedTrip.priceXLM,
+          companyWallet: selectedTrip.companyWallet,
+        }
+      );
+
+      if (!paymentResult) {
+        setPaymentStatus('error');
+        throw new Error(sorobanError || 'Error procesando pago');
+      }
+
+      console.log('✅ PAGO CONFIRMADO EN BLOCKCHAIN');
+      console.log('📊 TX Hash:', paymentResult.tx_hash);
+
+      // Crear reserva local
       const reservation = await createReservation(
         selectedTrip.id,
         account.publicKey,
@@ -112,32 +137,31 @@ export default function AvailableTripsPage() {
         selectedTrip.priceXLM
       );
 
-      if (!reservation) {
-        throw new Error('Error al crear la reserva');
+      // Confirmar con tx_hash real de Soroban
+      if (reservation) {
+        await confirmReservationPayment(
+          reservation.id,
+          account.publicKey,
+          paymentResult.tx_hash
+        );
       }
 
-      console.log('[PAGE] Iniciando pago para reserva:', reservation.id);
-
-      // Simular procesamiento de pago Stellar
-      // En producción, aquí se haría una transacción real a través de FreighterAPI
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Confirmar pago
-      const mockTxHash = `stellar_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-      await confirmReservationPayment(reservation.id, account.publicKey, mockTxHash);
-
       setPaymentStatus('success');
-      setReservations([...reservations, { ...reservation, status: 'completed', txHash: mockTxHash }]);
+      setReservations([...reservations, {
+        ...reservation!,
+        status: 'completed',
+        txHash: paymentResult.tx_hash,
+      }]);
 
-      console.log('[PAGE] Reserva completada. TX:', mockTxHash);
+      console.log('✅ Reserva guardada localmente');
 
       setTimeout(() => {
         setShowReservationModal(false);
         setSelectedTrip(null);
         setPaymentStatus('idle');
       }, 2000);
-    } catch (error) {
-      console.error('[PAGE] Error procesando reserva:', error);
+    } catch (error: any) {
+      console.error('❌ Error procesando reserva:', error);
       setPaymentStatus('error');
     } finally {
       setProcessingPayment(false);
@@ -536,18 +560,29 @@ export default function AvailableTripsPage() {
                     <Check className="w-8 h-8 text-green-400" />
                   </div>
                   <h2 className="text-2xl font-bold text-white mb-2">¡Reserva Confirmada!</h2>
-                  <p className="text-gray-400 mb-6">Tu reserva ha sido procesada exitosamente</p>
+                  <p className="text-gray-400 mb-2">Pago confirmado en blockchain Stellar</p>
+                  <p className="text-xs text-green-400 mb-6">✅ Transacción verificada</p>
 
-                  <div className="bg-slate-800/50 rounded-lg p-4 mb-6 border border-slate-700 text-left">
-                    <p className="text-gray-300 text-sm mb-2">{selectedTrip.name}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-400 text-sm">Pagado:</span>
-                      <span className="text-green-400 font-bold">{selectedTrip.priceXLM} XLM</span>
+                  <div className="bg-slate-800/50 rounded-lg p-4 mb-4 border border-slate-700 text-left">
+                    <p className="text-gray-300 text-sm mb-3 font-bold">{selectedTrip.name}</p>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-400">Pagado:</span>
+                        <span className="text-green-400 font-bold">{selectedTrip.priceXLM} XLM</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-400">Destino:</span>
+                        <span className="text-white">{selectedTrip.destination}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-400">Estado:</span>
+                        <span className="text-green-400 font-semibold">Confirmado</span>
+                      </div>
                     </div>
                   </div>
 
-                  <p className="text-gray-400">
-                    Recibirás un correo de confirmación pronto
+                  <p className="text-gray-400 text-sm">
+                    Los fondos han sido transferidos a la empresa
                   </p>
                 </div>
               </>
